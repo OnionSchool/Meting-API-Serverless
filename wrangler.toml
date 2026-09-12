@@ -24,3 +24,7 @@ invocation_logs = true
 enabled = false
 persist = true
 head_sampling_rate = 1
+
+[[kv_namespaces]]
+binding = "meting"
+id = "60afd5b750f64814ac4291f5189bf8c0"
