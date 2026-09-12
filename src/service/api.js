@@ -5,7 +5,7 @@ import hashjs from 'hash.js'
 import { HTTPException } from 'hono/http-exception'
 import { loadConfig } from '../config.js'
 import { format as lyricFormat } from '../utils/lyric.js'
-import { readCookieAsync, isAllowedHost } from '../utils/cookie.js'
+import { readCookiesAsync, isAllowedHost } from '../utils/cookie.js'
 import { LRUCache } from 'lru-cache'
 
 const cache = new LRUCache({
@@ -86,30 +86,38 @@ export default async (c) => {
   let data = cache.get(cacheKey)
   if (data === undefined) {
     c.header('x-cache', 'miss')
-    const meting = new Meting(server)
-    patchNeteaseEapiEncrypt(meting)
-    meting.format(true)
-
-    // 检查 referrer 并配置 cookie
+    // 检查 referrer 并配置 Cookie；上游拒绝或 URL 为空时自动尝试下一项。
     const referrer = c.req.header('referer')
-    if (isAllowedHost(referrer, config.meting.cookie.allowHosts)) {
-      const cookie = await readCookieAsync(server, c.env)
-      if (cookie) {
-        meting.cookie(cookie)
+    const method = METING_METHODS[type]
+    const cookies = isAllowedHost(referrer, config.meting.cookie.allowHosts)
+      ? await readCookiesAsync(server, c.env)
+      : []
+    const attempts = cookies.length > 0 ? cookies : [null]
+    let lastError
+
+    for (const [index, cookie] of attempts.entries()) {
+      const meting = new Meting(server)
+      patchNeteaseEapiEncrypt(meting)
+      meting.format(true)
+      if (cookie) meting.cookie(cookie)
+
+      try {
+        const response = await meting[method](id)
+        const responseData = JSON.parse(response)
+        if (type === 'url' && !responseData.url && cookie && index < attempts.length - 1) continue
+        data = responseData
+        lastError = undefined
+        break
+      } catch (error) {
+        lastError = error
       }
     }
 
-    const method = METING_METHODS[type]
-    let response
-    try {
-      response = await meting[method](id)
-    } catch (error) {
-      console.error(error)
+    if (lastError) {
+      console.error(lastError)
       throw new HTTPException(500, { message: '上游 API 调用失败' })
     }
-    try {
-      data = JSON.parse(response)
-    } catch (error) {
+    if (data === undefined) {
       throw new HTTPException(500, { message: '上游 API 返回格式异常' })
     }
     cache.set(cacheKey, data, {

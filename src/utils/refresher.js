@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto'
+import { readCookie } from './cookie.js'
 
 export async function refreshQQCookie (env) {
   const result = { success: false, message: '未执行刷新', data: null }
@@ -17,7 +18,7 @@ export async function refreshQQCookie (env) {
   // 1. 获取当前 Cookie
 
   if (!currentCookie) {
-    currentCookie = env.METING_COOKIE_TENCENT || env.METING_COOKIE || ''
+    currentCookie = readCookie('tencent', env)
   }
   
 

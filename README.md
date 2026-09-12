@@ -25,14 +25,14 @@
 | :---------------------------- | :---------------------------------------------------------------------------------- |
 | `METING_TOKEN`              | **强烈建议修改**。API 鉴权密钥，防止接口被滥用                                |
 | `METING_COOKIE_ALLOW_HOSTS` | **推荐设置**。允许访问 vip 资源的域名白名单（如 `example.com,*.test.com`） |
-| `METING_COOKIE_TENCENT`     | QQ 音乐 Cookie。用于获取 VIP资源，**支持自动保活**                            |
-| `METING_COOKIE_NETEASE`     | 网易云 Cookie。用于获取 VIP资源                                                     |
-| `METING_COOKIE_KUGOU`       | 酷狗 Cookie                                                                         |
-| `METING_COOKIE_KUWO`        | 酷我 Cookie                                                                         |
+| `TENCENT_COOKIE_1`          | QQ 音乐首个 Cookie。用于获取 VIP资源，**支持自动保活**                         |
+| `NETEASE_COOKIE_1`          | 网易云首个 Cookie。用于获取 VIP资源                                                  |
+| `KUGOU_COOKIE_1`            | 酷狗首个 Cookie                                                                    |
+| `KUWO_COOKIE_1`             | 酷我首个 Cookie                                                                    |
 
 #### 3. 配置 QQ 音乐 Cookie 保活 (可选)
 
-如果你配置了 `METING_COOKIE_TENCENT`，建议开启自动保活功能，否则 Cookie 过期后需要手动更新。
+如果你配置了 `TENCENT_COOKIE_1`，建议开启自动保活功能，否则 Cookie 过期后需要手动更新。
 
 **3.1 创建 KV 数据库**
 
@@ -74,12 +74,14 @@
    | :---------------------------- | :---------------------------------------------------------------------------------- |
    | `METING_TOKEN`              | **强烈建议修改**。API 鉴权密钥，防止接口被滥用                                |
    | `METING_COOKIE_ALLOW_HOSTS` | **推荐设置**。允许访问 vip 资源的域名白名单（如 `example.com,*.test.com`） |
-   | `METING_COOKIE_TENCENT`     | QQ 音乐 Cookie。用于获取 VIP资源                                                    |
-   | `METING_COOKIE_NETEASE`     | 网易云 Cookie。用于获取 VIP资源                                                     |
-   | `METING_COOKIE_KUGOU`       | 酷狗 Cookie                                                                         |
-   | `METING_COOKIE_KUWO`        | 酷我 Cookie                                                                         |
+   | `TENCENT_COOKIE_1`          | QQ 音乐首个 Cookie。用于获取 VIP资源                                                |
+   | `NETEASE_COOKIE_1`          | 网易云首个 Cookie。用于获取 VIP资源                                                  |
+   | `KUGOU_COOKIE_1`            | 酷狗首个 Cookie                                                                      |
+   | `KUWO_COOKIE_1`             | 酷我首个 Cookie                                                                      |
 
 > 注意：Vercel 部署不支持 QQ 音乐 Cookie 的自动保活功能。
+
+同一音乐平台可配置 `平台_COOKIE_序号` 形式的多个变量，例如 `NETEASE_COOKIE_1`、`NETEASE_COOKIE_2`。系统按序号升序尝试；当前 Cookie 的上游请求失败，或请求歌曲 URL 未返回地址时，自动尝试下一个 Cookie。
 
 ## 🛠️ 使用指南
 
@@ -122,12 +124,7 @@
 | `METING_URL`                |           | 对外可访问的基地址，用于生成回调链接（默认使用请求的 origin+路由前缀）                 |
 | `METING_TOKEN`              | `token` | HMAC 鉴权密钥，默认 `token`，强烈建议更改并设置为 Secret                             |
 | `METING_COOKIE_ALLOW_HOSTS` |           | 允许访问平台 Cookie 的 referrer host 白名单（逗号分隔，留空表示不限制，支持 * 通配符） |
-| `METING_COOKIE_NETEASE`     |           | 网易云 Cookie（可选）                                                                  |
-| `METING_COOKIE_TENCENT`     |           | QQ 音乐 Cookie（可选）                                                                 |
-| `METING_COOKIE_KUGOU`       |           | 酷狗 Cookie（可选）                                                                    |
-| `METING_COOKIE_BAIDU`       |           | 百度 Cookie（可选）                                                                    |
-| `METING_COOKIE_KUWO`        |           | 酷我 Cookie（可选）                                                                    |
-| `METING_COOKIE`             |           | 通用 Cookie 兜底，平台专用值为空时使用（可选）                                         |
+| `<平台>_COOKIE_<序号>`      |           | 平台 Cookie，例如 `NETEASE_COOKIE_1`；序号从 1 开始并按升序降级（可选）                 |
 
 ## 📝 开发与调试
 

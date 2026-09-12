@@ -15,7 +15,9 @@ crons = ["0 */4 * * *"]
 
 # 环境变量 (可选，建议在 Dashboard 设置)
 [vars]
-# METING_COOKIE_TENCENT = "YOUR_COOKIE_HERE"
+# 多个 Cookie 使用 <平台>_COOKIE_<序号>，失效时按序号自动降级
+# TENCENT_COOKIE_1 = "COOKIE_1"
+# TENCENT_COOKIE_2 = "COOKIE_2"
 # METING_COOKIE_ALLOW_HOSTS = "example.com,*.example.com"
 
 [observability]
