@@ -22,20 +22,24 @@ export function readCookie (server, env) {
  * 异步读取 Cookie 列表，优先从 KV 读取 (仅限腾讯)，其次环境变量。
  */
 export async function readCookiesAsync (server, env) {
-  const cookies = readCookies(server, env)
-  if (server === 'tencent' && env.METING_KV) {
-    const kvCookie = await env.METING_KV.get('cookie_tencent')
-    if (kvCookie?.trim()) cookies.unshift(kvCookie.trim())
-  }
-  return [...new Set(cookies)]
+  const entries = await readCookieEntriesAsync(server, env)
+  return [...new Set(entries.map(({ value }) => value))]
 }
 
 export async function readCookieEntriesAsync (server, env) {
-  const entries = readCookieEntries(server, env)
-  if (server === 'tencent' && env.METING_KV) {
-    const kvCookie = await env.METING_KV.get('cookie_tencent')
-    if (kvCookie?.trim()) entries.unshift({ key: 'METING_KV', value: kvCookie.trim() })
+  const entries = []
+  if (env?.METING_KV && isSupportedPlatform(server)) {
+    const { keys } = await env.METING_KV.list({ prefix: `${KV_PREFIX}${server}:` })
+    const cookies = await Promise.all(keys.map(async ({ name }) => ({ name, value: await env.METING_KV.get(name) })))
+    entries.push(...cookies
+      .filter(({ value }) => value?.trim())
+      .map(({ name, value }) => ({ key: `KV_${name.slice(KV_PREFIX.length)}`, value: value.trim(), storageKey: name })))
   }
+  if (server === 'tencent' && env?.METING_KV) {
+    const kvCookie = await env.METING_KV.get('cookie_tencent')
+    if (kvCookie?.trim()) entries.push({ key: 'METING_KV', value: kvCookie.trim(), storageKey: 'cookie_tencent' })
+  }
+  entries.push(...readCookieEntries(server, env))
   return entries
 }
 
@@ -64,4 +68,14 @@ export function isAllowedHost (referrer, allowHosts = []) {
   } catch (error) {
     return false
   }
+}
+const PLATFORMS = new Set(['netease', 'tencent', 'kugou', 'baidu', 'kuwo'])
+const KV_PREFIX = 'cookies:'
+
+export function isSupportedPlatform (platform) {
+  return PLATFORMS.has(platform)
+}
+
+export function cookieKVKey (platform, id) {
+  return `${KV_PREFIX}${platform}:${id}`
 }

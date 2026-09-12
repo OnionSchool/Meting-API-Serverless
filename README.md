@@ -30,7 +30,7 @@
 | `KUGOU_COOKIE_1`            | 酷狗首个 Cookie                                                                    |
 | `KUWO_COOKIE_1`             | 酷我首个 Cookie                                                                    |
 
-#### 3. 配置 QQ 音乐 Cookie 保活 (可选)
+#### 3. 配置 KV 与 QQ 音乐 Cookie 保活 (可选)
 
 如果你配置了 `TENCENT_COOKIE_1`，建议开启自动保活功能，否则 Cookie 过期后需要手动更新。
 
@@ -54,7 +54,7 @@
 3. 选择添加 Cron Triggers
 4. 设置频率为每 4 小时一次
 
-完成以上步骤后，Worker 会自动将 QQ 音乐 Cookie 存入 KV，并定期刷新，无需人工干预。
+完成以上步骤后，Worker 会自动将 QQ 音乐 Cookie 存入 KV，并定期刷新，无需人工干预。KV 同时用于管理页面动态添加所有平台的 Cookie。
 
 > 注意：
 >
@@ -135,6 +135,10 @@
 ## Cookie 状态页
 
 访问 `/status` 可查看每个已配置 Cookie 的检测状态。页面只展示环境变量名、所属平台、结果与耗时，绝不会返回 Cookie 内容。
+
+## Cookie 管理页
+
+绑定 `METING_KV` 后，访问 `/admin` 并输入 `METING_TOKEN` 可动态添加或删除 Cookie。动态 Cookie 保存在 KV 中，优先于环境变量 Cookie 参与降级；管理列表仅展示平台和标识符，不会返回 Cookie 内容。
 
 ## 鉴权计算
 

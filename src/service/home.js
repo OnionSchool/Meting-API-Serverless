@@ -25,7 +25,7 @@ export default async (c) => {
 </head>
 <body>
   <main>
-    <nav><a class="brand" href="/">METING API</a><div class="links"><a id="status-link" href="/status">COOKIE STATUS</a><a href="https://github.com/RhenCloud/Meting-API-Serverless" target="_blank" rel="noreferrer">GITHUB ↗</a></div></nav>
+    <nav><a class="brand" href="/">METING API</a><div class="links"><a href="/admin">ADMIN</a><a id="status-link" href="/status">COOKIE STATUS</a><a href="https://github.com/RhenCloud/Meting-API-Serverless" target="_blank" rel="noreferrer">GITHUB ↗</a></div></nav>
     <header>
       <div class="kicker">MULTI-PLATFORM MUSIC PROXY</div>
       <h1>把音乐接口<br>留在自己的手里。</h1>
