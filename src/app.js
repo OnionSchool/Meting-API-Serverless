@@ -4,6 +4,7 @@ import { requestLogger } from './middleware/logger.js'
 import errors from './middleware/errors.js'
 import apiService from './service/api.js'
 import demoService from './service/demo.js'
+import homeService from './service/home.js'
 import statusService, { statusApiService } from './service/status.js'
 import { refreshQQCookie } from './utils/refresher.js'
 
@@ -13,6 +14,7 @@ export const createApp = () => {
     .use(requestLogger)
     .use(errors)
 
+  app.get('/', homeService)
   app.get('/api', apiService)
   app.get('/demo', demoService)
   app.get('/status', statusService)
