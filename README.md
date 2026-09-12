@@ -101,6 +101,8 @@
 
 - 获取网易云歌曲详情：`https://你的域名/api?server=netease&type=song&id=186016`
 
+歌曲列表项包含 `title`、`author`、`duration`（毫秒）、`url`、`pic` 和 `lrc`。
+
 ### 前端接入 (MetingJS)
 
 如果你使用 [MetingJS](https://github.com/metowolf/MetingJS)，只需设置 `meting_api` 即可：

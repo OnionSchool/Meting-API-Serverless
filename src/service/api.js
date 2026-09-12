@@ -171,6 +171,7 @@ export default async (c) => {
       return {
         title: x.name,
         author: x.artist.join(' / '),
+        duration: x.duration,
         url: `${baseUrl}/api?server=${server}&type=url&id=${x.url_id}&auth=${auth(server, 'url', x.url_id, token)}`,
         pic: `${baseUrl}/api?server=${server}&type=pic&id=${x.pic_id}&auth=${auth(server, 'pic', x.pic_id, token)}`,
         lrc: `${baseUrl}/api?server=${server}&type=lrc&id=${x.lyric_id}&auth=${auth(server, 'lrc', x.lyric_id, token)}`
