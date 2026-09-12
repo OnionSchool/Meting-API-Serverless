@@ -30,10 +30,10 @@ export async function readCookieEntriesAsync (server, env) {
   const entries = []
   if (env?.METING_KV && isSupportedPlatform(server)) {
     const { keys } = await env.METING_KV.list({ prefix: `${KV_PREFIX}${server}:` })
-    const cookies = await Promise.all(keys.map(async ({ name }) => ({ name, value: await env.METING_KV.get(name) })))
+    const cookies = await Promise.all(keys.map(async ({ name }) => ({ name, ...parseStoredCookie(await env.METING_KV.get(name)) })))
     entries.push(...cookies
       .filter(({ value }) => value?.trim())
-      .map(({ name, value }) => ({ key: `KV_${name.slice(KV_PREFIX.length)}`, value: value.trim(), storageKey: name })))
+      .map(({ name: storageKey, value, label, storageFormat }) => ({ key: `KV_${storageKey.slice(KV_PREFIX.length)}`, value: value.trim(), label, storageKey, storageFormat })))
   }
   if (server === 'tencent' && env?.METING_KV) {
     const kvCookie = await env.METING_KV.get('cookie_tencent')
@@ -78,4 +78,19 @@ export function isSupportedPlatform (platform) {
 
 export function cookieKVKey (platform, id) {
   return `${KV_PREFIX}${platform}:${id}`
+}
+
+export function parseStoredCookie (storedValue) {
+  if (typeof storedValue !== 'string') return { value: '' }
+  try {
+    const record = JSON.parse(storedValue)
+    if (typeof record?.cookie === 'string') {
+      return { value: record.cookie, label: typeof record.name === 'string' ? record.name : '', storageFormat: 'record' }
+    }
+  } catch (error) {}
+  return { value: storedValue, label: '', storageFormat: 'legacy' }
+}
+
+export function stringifyStoredCookie (cookie, name = '') {
+  return JSON.stringify({ cookie, name })
 }

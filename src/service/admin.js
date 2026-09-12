@@ -1,6 +1,6 @@
 import { HTTPException } from 'hono/http-exception'
 import { html } from 'hono/html'
-import { cookieKVKey, isSupportedPlatform } from '../utils/cookie.js'
+import { cookieKVKey, isSupportedPlatform, parseStoredCookie, stringifyStoredCookie } from '../utils/cookie.js'
 
 function requireAdmin (c) {
   const token = c.req.header('authorization')?.replace(/^Bearer\s+/i, '')
@@ -18,22 +18,24 @@ export async function listCookiesService (c) {
   requireAdmin(c)
   const kv = requireKV(c.env)
   const { keys } = await kv.list({ prefix: 'cookies:' })
-  return c.json({ cookies: keys.map(({ name }) => {
+  const cookies = await Promise.all(keys.map(async ({ name }) => ({ name, ...parseStoredCookie(await kv.get(name)) })))
+  return c.json({ cookies: cookies.map(({ name, label }) => {
     const [, platform, id] = name.split(':')
-    return { platform, id }
+    return { platform, id, name: label }
   }) })
 }
 
 export async function createCookieService (c) {
   requireAdmin(c)
   const kv = requireKV(c.env)
-  const { platform, cookie } = await c.req.json()
-  if (!isSupportedPlatform(platform) || typeof cookie !== 'string' || !cookie.trim()) {
+  const { platform, cookie, name } = await c.req.json()
+  if (!isSupportedPlatform(platform) || typeof cookie !== 'string' || !cookie.trim() || (name !== undefined && (typeof name !== 'string' || name.trim().length > 100))) {
     throw new HTTPException(400, { message: '平台或 Cookie 参数不合法' })
   }
   const id = `${Date.now().toString(36)}-${crypto.randomUUID().slice(0, 8)}`
-  await kv.put(cookieKVKey(platform, id), cookie.trim())
-  return c.json({ platform, id }, 201)
+  const label = name?.trim() || ''
+  await kv.put(cookieKVKey(platform, id), stringifyStoredCookie(cookie.trim(), label))
+  return c.json({ platform, id, name: label }, 201)
 }
 
 export async function deleteCookieService (c) {
@@ -61,14 +63,14 @@ export default async (c) => c.html(html`<!DOCTYPE html>
 <body><main>
   <a id="home-link" href="/">← 首页</a><div class="eyebrow" style="margin-top:36px">METING / PRIVATE CONTROL</div><h1>Cookie 管理</h1><p>通过 <code>METING_TOKEN</code> 登录。Cookie 仅写入 KV，读取列表不会返回其内容。</p>
   <section id="login" class="panel"><label for="token">METING_TOKEN</label><input id="token" type="password" autocomplete="current-password"><div class="actions" style="margin-top:16px"><button id="login-button" class="primary">进入管理页</button><span id="message"></span></div></section>
-  <section id="manager" class="hidden"><div class="panel"><div class="field"><label for="platform">平台</label><select id="platform"><option value="netease">网易云音乐</option><option value="tencent">QQ 音乐</option><option value="kugou">酷狗音乐</option><option value="kuwo">酷我音乐</option><option value="baidu">百度音乐</option></select></div><div class="field"><label for="cookie">Cookie</label><textarea id="cookie" placeholder="粘贴完整 Cookie"></textarea></div><div class="actions"><button id="add-button" class="primary">添加 Cookie</button><span id="manager-message"></span></div></div><div id="cookies"></div></section>
+  <section id="manager" class="hidden"><div class="panel"><div class="field"><label for="platform">平台</label><select id="platform"><option value="netease">网易云音乐</option><option value="tencent">QQ 音乐</option><option value="kugou">酷狗音乐</option><option value="kuwo">酷我音乐</option><option value="baidu">百度音乐</option></select></div><div class="field"><label for="name">名称（可选）</label><input id="name" maxlength="100" placeholder="例如：主账号"></div><div class="field"><label for="cookie">Cookie</label><textarea id="cookie" placeholder="粘贴完整 Cookie"></textarea></div><div class="actions"><button id="add-button" class="primary">添加 Cookie</button><span id="manager-message"></span></div></div><div id="cookies"></div></section>
   <script>
     const tokenInput = document.getElementById('token'); const login = document.getElementById('login'); const manager = document.getElementById('manager'); const message = document.getElementById('message'); const managerMessage = document.getElementById('manager-message'); const cookies = document.getElementById('cookies'); const pagePath = window.location.pathname.endsWith('/') ? window.location.pathname.slice(0, -1) : window.location.pathname; const apiPath = pagePath + '/cookies';
     document.getElementById('home-link').href = pagePath.endsWith('/admin') ? pagePath.slice(0, -5) || '/' : '/'
     const request = (path = '', options = {}) => fetch(apiPath + path, { ...options, headers: { ...options.headers, Authorization: 'Bearer ' + sessionStorage.getItem('meting-admin-token') } });
     async function errorMessage(response) { return response.headers.get('x-error-message') || await response.text() || '请求失败' }
-    async function load() { const response = await request(); if (!response.ok) throw new Error(await errorMessage(response)); const data = await response.json(); cookies.innerHTML = data.cookies.length ? data.cookies.map(cookie => '<div class="row"><div><div>' + cookie.id + '</div><div class="platform">' + cookie.platform + '</div></div><button class="danger" data-platform="' + cookie.platform + '" data-id="' + cookie.id + '">删除</button></div>').join('') : '<p>KV 中尚未添加 Cookie。</p>'; cookies.querySelectorAll('button').forEach(button => button.onclick = async () => { if (!confirm('确认删除此 Cookie？')) return; const response = await request('/' + button.dataset.platform + '/' + button.dataset.id, { method: 'DELETE' }); if (!response.ok) { managerMessage.textContent = await errorMessage(response); return } await load() }); }
+    async function load() { const response = await request(); if (!response.ok) throw new Error(await errorMessage(response)); const data = await response.json(); cookies.innerHTML = data.cookies.length ? data.cookies.map(cookie => '<div class="row"><div><div>' + (cookie.name || cookie.id) + '</div><div class="platform">' + cookie.platform + ' / ' + cookie.id + '</div></div><button class="danger" data-platform="' + cookie.platform + '" data-id="' + cookie.id + '">删除</button></div>').join('') : '<p>KV 中尚未添加 Cookie。</p>'; cookies.querySelectorAll('button').forEach(button => button.onclick = async () => { if (!confirm('确认删除此 Cookie？')) return; const response = await request('/' + button.dataset.platform + '/' + button.dataset.id, { method: 'DELETE' }); if (!response.ok) { managerMessage.textContent = await errorMessage(response); return } await load() }); }
     async function enter() { sessionStorage.setItem('meting-admin-token', tokenInput.value); try { await load(); login.classList.add('hidden'); manager.classList.remove('hidden') } catch (error) { sessionStorage.removeItem('meting-admin-token'); message.textContent = error.message } }
-    document.getElementById('login-button').onclick = enter; tokenInput.addEventListener('keydown', event => { if (event.key === 'Enter') enter() }); document.getElementById('add-button').onclick = async () => { const cookie = document.getElementById('cookie').value; const platform = document.getElementById('platform').value; managerMessage.textContent = ''; const response = await request('', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ platform, cookie }) }); if (!response.ok) { managerMessage.textContent = await errorMessage(response); return } document.getElementById('cookie').value = ''; await load() };
+    document.getElementById('login-button').onclick = enter; tokenInput.addEventListener('keydown', event => { if (event.key === 'Enter') enter() }); document.getElementById('add-button').onclick = async () => { const cookie = document.getElementById('cookie').value; const platform = document.getElementById('platform').value; const name = document.getElementById('name').value; managerMessage.textContent = ''; const response = await request('', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ platform, cookie, name }) }); if (!response.ok) { managerMessage.textContent = await errorMessage(response); return } document.getElementById('name').value = ''; document.getElementById('cookie').value = ''; await load() };
   </script>
 </main></body></html>`)

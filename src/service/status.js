@@ -15,9 +15,9 @@ async function checkCookie (platform, entry) {
   try {
     const response = await meting.song('186016')
     JSON.parse(response)
-    return { platform, key: entry.key, available: true, duration: Date.now() - startedAt }
+    return { platform, key: entry.key, name: entry.label, available: true, duration: Date.now() - startedAt }
   } catch (error) {
-    return { platform, key: entry.key, available: false, duration: Date.now() - startedAt }
+    return { platform, key: entry.key, name: entry.label, available: false, duration: Date.now() - startedAt }
   }
 }
 
@@ -78,7 +78,7 @@ export default async (c) => {
     }).then(({ cookies }) => {
       updated.textContent = '刚刚检测'
       if (!cookies.length) { status.innerHTML = '<div class="empty">未发现已配置的 Cookie。</div>'; return }
-      status.innerHTML = cookies.map(cookie => '<div class="row"><div><div>' + cookie.key + '</div><div class="platform">' + cookie.platform + '</div></div><div class="state ' + (cookie.available ? 'available' : 'unavailable') + '">' + (cookie.available ? '可用' : '不可用') + '</div><div class="duration">' + cookie.duration + ' ms</div></div>').join('')
+       status.innerHTML = cookies.map(cookie => '<div class="row"><div><div>' + (cookie.name || cookie.key) + '</div><div class="platform">' + cookie.platform + ' / ' + cookie.key + '</div></div><div class="state ' + (cookie.available ? 'available' : 'unavailable') + '">' + (cookie.available ? '可用' : '不可用') + '</div><div class="duration">' + cookie.duration + ' ms</div></div>').join('')
     }).catch(() => { status.innerHTML = '<div class="empty">状态检测失败，请稍后重试。</div>'; updated.textContent = '请求失败' })
   </script>
 </body>

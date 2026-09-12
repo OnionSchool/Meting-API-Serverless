@@ -1,11 +1,12 @@
 import { createHash } from 'node:crypto'
-import { readCookieEntriesAsync } from './cookie.js'
+import { readCookieEntriesAsync, stringifyStoredCookie } from './cookie.js'
 
 export async function refreshQQCookie (env) {
   const result = { success: false, message: '未执行刷新', data: null }
 
   let currentCookie = ''
   let storageKey = 'cookie_tencent'
+  let entry
   // 0. 检查 KV 是否绑定
   if (!env.METING_KV) {
     result.message = '错误: 未绑定 METING_KV。请在 Dashboard 绑定 KV Namespace。'
@@ -13,7 +14,7 @@ export async function refreshQQCookie (env) {
     return result
   }
   else {
-    const [entry] = await readCookieEntriesAsync('tencent', env)
+    [entry] = await readCookieEntriesAsync('tencent', env)
     if (entry) {
       currentCookie = entry.value
       storageKey = entry.storageKey || storageKey
@@ -114,7 +115,7 @@ export async function refreshQQCookie (env) {
 
     // 5. 保存到 KV
     if (updatedCookieStr !== currentCookie) {
-      await env.METING_KV.put(storageKey, updatedCookieStr)
+      await env.METING_KV.put(storageKey, entry?.storageFormat === 'record' ? stringifyStoredCookie(updatedCookieStr, entry.label) : updatedCookieStr)
       result.success = true
       result.message = 'QQ 音乐 Cookie 刷新成功并已保存到 KV'
       console.log(result.message)

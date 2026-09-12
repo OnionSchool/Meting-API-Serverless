@@ -138,7 +138,7 @@
 
 ## Cookie 管理页
 
-绑定 `METING_KV` 后，访问 `/admin` 并输入 `METING_TOKEN` 可动态添加或删除 Cookie。动态 Cookie 保存在 KV 中，优先于环境变量 Cookie 参与降级；管理列表仅展示平台和标识符，不会返回 Cookie 内容。
+绑定 `METING_KV` 后，访问 `/admin` 并输入 `METING_TOKEN` 可动态添加、命名或删除 Cookie。动态 Cookie 保存在 KV 中，优先于环境变量 Cookie 参与降级；管理列表仅展示名称、平台和标识符，不会返回 Cookie 内容。
 
 ## 鉴权计算
 
