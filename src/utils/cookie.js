@@ -2,12 +2,16 @@
  * 从环境变量读取指定平台的 Cookie 列表。
  */
 export function readCookies (server, env) {
+  return readCookieEntries(server, env).map(({ value }) => value)
+}
+
+export function readCookieEntries (server, env) {
   const envSource = env ?? (typeof process !== 'undefined' ? process.env : {}) ?? {}
   const prefix = `${server.toUpperCase()}_COOKIE_`
   return Object.entries(envSource)
     .filter(([key, value]) => new RegExp(`^${prefix}[1-9]\\d*$`).test(key) && typeof value === 'string' && value.trim())
     .sort(([left], [right]) => Number(left.slice(prefix.length)) - Number(right.slice(prefix.length)))
-    .map(([, value]) => value.trim())
+    .map(([key, value]) => ({ key, value: value.trim() }))
 }
 
 export function readCookie (server, env) {
@@ -24,6 +28,15 @@ export async function readCookiesAsync (server, env) {
     if (kvCookie?.trim()) cookies.unshift(kvCookie.trim())
   }
   return [...new Set(cookies)]
+}
+
+export async function readCookieEntriesAsync (server, env) {
+  const entries = readCookieEntries(server, env)
+  if (server === 'tencent' && env.METING_KV) {
+    const kvCookie = await env.METING_KV.get('cookie_tencent')
+    if (kvCookie?.trim()) entries.unshift({ key: 'METING_KV', value: kvCookie.trim() })
+  }
+  return entries
 }
 
 export async function readCookieAsync (server, env) {

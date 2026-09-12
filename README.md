@@ -132,6 +132,10 @@
 2. 本地启动：`npx wrangler dev`
 3. 访问测试：`http://localhost:8787/demo`
 
+## Cookie 状态页
+
+访问 `/status?token=<METING_TOKEN>` 可查看每个已配置 Cookie 的检测状态。页面只展示环境变量名、所属平台、结果与耗时，绝不会返回 Cookie 内容；状态检测接口复用 `METING_TOKEN` 鉴权，避免被公开滥用。
+
 ## 鉴权计算
 
 `auth = HMAC-SHA1(METING_TOKEN, server + type + id)`

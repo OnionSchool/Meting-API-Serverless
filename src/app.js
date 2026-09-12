@@ -4,6 +4,7 @@ import { requestLogger } from './middleware/logger.js'
 import errors from './middleware/errors.js'
 import apiService from './service/api.js'
 import demoService from './service/demo.js'
+import statusService, { statusApiService } from './service/status.js'
 import { refreshQQCookie } from './utils/refresher.js'
 
 export const createApp = () => {
@@ -14,6 +15,8 @@ export const createApp = () => {
 
   app.get('/api', apiService)
   app.get('/demo', demoService)
+  app.get('/status', statusService)
+  app.get('/status.json', statusApiService)
 
   app.get('/refresh', async (c) => {
     const result = await refreshQQCookie(c.env)
