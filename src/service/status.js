@@ -1,17 +1,19 @@
 import Meting from '@meting/core'
 import { html } from 'hono/html'
 import { readCookieEntriesAsync } from '../utils/cookie.js'
+import { patchNeteaseEapiEncrypt } from './api.js'
 
 const PLATFORMS = ['netease', 'tencent', 'kugou', 'baidu', 'kuwo']
 
 async function checkCookie (platform, entry) {
   const startedAt = Date.now()
   const meting = new Meting(platform)
+  patchNeteaseEapiEncrypt(meting)
   meting.cookie(entry.value)
   meting.format(true)
 
   try {
-    const response = await meting.search('Meting')
+    const response = await meting.song('186016')
     JSON.parse(response)
     return { platform, key: entry.key, available: true, duration: Date.now() - startedAt }
   } catch (error) {

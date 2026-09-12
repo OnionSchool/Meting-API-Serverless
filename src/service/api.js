@@ -15,7 +15,7 @@ const cache = new LRUCache({
 
 // Cloudflare Workers 禁用 AES-ECB，@meting/core 在网易云请求中用到了 aes-128-ecb。
 // 这里用纯 JS 实现的 AES-ECB 替换默认实现，避免 createCipheriv 报 iv 为 null。
-const patchNeteaseEapiEncrypt = (meting) => {
+export const patchNeteaseEapiEncrypt = (meting) => {
   const provider = meting?.provider
   if (!provider || provider.name !== 'netease') return
 
