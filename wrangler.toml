@@ -26,5 +26,5 @@ persist = true
 head_sampling_rate = 1
 
 [[kv_namespaces]]
-binding = "meting"
+binding = "METING_KV"
 id = "60afd5b750f64814ac4291f5189bf8c0"
