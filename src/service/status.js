@@ -1,7 +1,5 @@
 import Meting from '@meting/core'
-import { HTTPException } from 'hono/http-exception'
 import { html } from 'hono/html'
-import { loadConfig } from '../config.js'
 import { readCookieEntriesAsync } from '../utils/cookie.js'
 
 const PLATFORMS = ['netease', 'tencent', 'kugou', 'baidu', 'kuwo']
@@ -31,11 +29,6 @@ export async function getCookieStatuses (env) {
 }
 
 export async function statusApiService (c) {
-  const config = loadConfig(c.env, c.req.url)
-  const token = c.req.query('token') || c.req.query('auth')
-  if (token !== config.meting.token) {
-    throw new HTTPException(401, { message: '鉴权失败,非法调用' })
-  }
   return c.json({ cookies: await getCookieStatuses(c.env) })
 }
 
@@ -77,7 +70,7 @@ export default async (c) => {
   <script>
     const status = document.getElementById('status')
     const updated = document.getElementById('updated')
-    fetch('status.json' + window.location.search).then(response => {
+    fetch('status.json').then(response => {
       if (!response.ok) throw new Error('检测请求失败')
       return response.json()
     }).then(({ cookies }) => {

@@ -134,7 +134,7 @@
 
 ## Cookie 状态页
 
-访问 `/status?token=<METING_TOKEN>` 可查看每个已配置 Cookie 的检测状态。页面只展示环境变量名、所属平台、结果与耗时，绝不会返回 Cookie 内容；状态检测接口复用 `METING_TOKEN` 鉴权，避免被公开滥用。
+访问 `/status` 可查看每个已配置 Cookie 的检测状态。页面只展示环境变量名、所属平台、结果与耗时，绝不会返回 Cookie 内容。
 
 ## 鉴权计算
 
