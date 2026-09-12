@@ -1,6 +1,7 @@
 import { HTTPException } from 'hono/http-exception'
 import { html } from 'hono/html'
 import { cookieKVKey, isSupportedPlatform, parseStoredCookie, stringifyStoredCookie } from '../utils/cookie.js'
+import { clearCookieStatusCache } from './status.js'
 
 function requireAdmin (c) {
   const token = c.req.header('authorization')?.replace(/^Bearer\s+/i, '')
@@ -18,7 +19,10 @@ export async function listCookiesService (c) {
   requireAdmin(c)
   const kv = requireKV(c.env)
   const { keys } = await kv.list({ prefix: 'cookies:' })
-  const cookies = await Promise.all(keys.map(async ({ name }) => ({ name, ...parseStoredCookie(await kv.get(name)) })))
+  const cookies = await Promise.all(keys.map(async ({ name, metadata }) => {
+    if (typeof metadata?.name === 'string') return { name, label: metadata.name }
+    return { name, ...parseStoredCookie(await kv.get(name)) }
+  }))
   return c.json({ cookies: cookies.map(({ name, label }) => {
     const [, platform, id] = name.split(':')
     return { platform, id, name: label }
@@ -34,7 +38,8 @@ export async function createCookieService (c) {
   }
   const id = `${Date.now().toString(36)}-${crypto.randomUUID().slice(0, 8)}`
   const label = name?.trim() || ''
-  await kv.put(cookieKVKey(platform, id), stringifyStoredCookie(cookie.trim(), label))
+  await kv.put(cookieKVKey(platform, id), stringifyStoredCookie(cookie.trim(), label), { metadata: { name: label } })
+  clearCookieStatusCache()
   return c.json({ platform, id, name: label }, 201)
 }
 
@@ -47,6 +52,7 @@ export async function deleteCookieService (c) {
     throw new HTTPException(400, { message: 'Cookie 标识不合法' })
   }
   await kv.delete(cookieKVKey(platform, id))
+  clearCookieStatusCache()
   return c.body(null, 204)
 }
 

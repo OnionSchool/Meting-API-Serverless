@@ -4,6 +4,13 @@ import { readCookieEntriesAsync } from '../utils/cookie.js'
 import { patchNeteaseEapiEncrypt } from './api.js'
 
 const PLATFORMS = ['netease', 'tencent', 'kugou', 'baidu', 'kuwo']
+const STATUS_CACHE_TTL = 60 * 1000
+let statusCache
+let statusPromise
+
+export function clearCookieStatusCache () {
+  statusCache = undefined
+}
 
 async function checkCookie (platform, entry) {
   const startedAt = Date.now()
@@ -22,6 +29,20 @@ async function checkCookie (platform, entry) {
 }
 
 export async function getCookieStatuses (env) {
+  if (statusCache && Date.now() - statusCache.createdAt < STATUS_CACHE_TTL) return statusCache.cookies
+  if (statusPromise) return statusPromise
+
+  statusPromise = getCookieStatusesUncached(env)
+  try {
+    const cookies = await statusPromise
+    statusCache = { cookies, createdAt: Date.now() }
+    return cookies
+  } finally {
+    statusPromise = undefined
+  }
+}
+
+async function getCookieStatusesUncached (env) {
   const entries = await Promise.all(PLATFORMS.map(async platform => ({
     platform,
     cookies: await readCookieEntriesAsync(platform, env)
